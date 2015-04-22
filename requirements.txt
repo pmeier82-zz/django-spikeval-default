@@ -1,0 +1,4 @@
+# requirements for django-spikeval-default-visual
+
+django==1.7
+-e git+https://github.com:pmeier82/django-spikeval#egg=django-spikeval
