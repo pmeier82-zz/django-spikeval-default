@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 from StringIO import StringIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.shortcuts import get_object_or_404
 from spikeval.module import ModDefault, ModuleExecutionError
 from .models.result import ResultDefault
 
@@ -13,7 +14,7 @@ __all__ = ["ModuleDefault"]
 class ModuleDefault(ModDefault):
     """spikeval module for default visuals"""
 
-    # RESULT_TYPES = [
+    # RESULT_TYPES
     # 10 'wf_single'    MRPlot, # waveforms by units
     # 20 'wf_all'       MRPlot, # waveforms all spikes
     # 30 'clus12'       MRPlot, # cluster PC1/2
@@ -21,7 +22,6 @@ class ModuleDefault(ModDefault):
     # 50 'clus_proj'    MRPlot, # cluster projection
     # 60 'spiketrain'   MRPlot] # spike train set
 
-    # save django model results
     def save(self, mod, ana):
         """save django result entities"""
 
@@ -33,19 +33,22 @@ class ModuleDefault(ModDefault):
         for i, res in enumerate(self.result):
             # result
             kind = (i + 1) * 10
-            res_entity = ResultDefault(analysis=ana, module=mod, kind=kind)
+            res_entity, _ = ResultDefault.objects.get_or_create(analysis=ana, module=mod, kind=kind)
 
             # data
             img_data = StringIO()
             res.value.save(img_data, format="PNG")
 
-            # file
-
+            # filename
             try:
                 kindname = ResultDefault.KIND[kind]
             except:
                 kindname = "unknown{}".format(i)
             filename = "ana{:04d}_{}.png".format(ana.id, kindname)
+
+            # file
+            if res_entity.file is not None:
+                res_entity.file.delete()
             res_entity.file = InMemoryUploadedFile(
                 file=img_data,
                 field_name=None,
